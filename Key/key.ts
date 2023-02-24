@@ -1,3 +1,5 @@
+export const wallet = "EQBmIreLFZCTyxCU4BXNehduRzlmHAUzZ-ZwuazBwH-HBL-W";
+
 export const mnemonic =
     "client " +
     "town " +

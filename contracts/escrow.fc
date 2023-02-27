@@ -1,5 +1,56 @@
 #include "imports/stdlib.fc";
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+(slice, slice) load_data () inline {
+    var ds = get_data().begin_parse();
+    return (ds~load_msg_addr(), ds~load_msg_addr());
+}
 
+(slice) load_admin () inline{
+
+}
+
+slice parse_sender_address (cell in_msg_full) inline {
+    var cs = in_msg_full.begin_parse();
+    var flags = cs~load_uint(4);
+    slice sender_address = cs~load_msg_addr();
+    return sender_address;
+}
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    (slice owner_address, slice sender_address) = load_data();
+    slice sender_address = parse_sender_address(in_msg_full);
+
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64);
+
+    if(op==1){
+        ;; make a deal
+    }
+
+    if(op==2){
+        ;; cancel a deal
+        [int balance, cell _] = get_balance(); ;; balance of this contract
+        int fee = balance/100;
+        if ~ equal_slices(owner_address, sender_address){
+
+            var msg_fee = begin_cell()
+                    .store_uint(0x18, 6)
+                    .store_slice(owner_address)
+                    .store_grams(fee)
+                    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                    .end_cell();
+            send_raw_message(msg_fee, 1);
+
+            var msg_money_back = begin_cell()
+                    .store_uint(0x18, 6)
+                    .store_slice(owner_address)
+;;                     .store_grams(balance-fee)
+                    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                    .end_cell();
+            send_raw_message(msg_money_back, 128);
+
+
+        }
+
+    }
 }

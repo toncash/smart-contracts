@@ -1,0 +1,39 @@
+int workchain() asm "0 PUSHINT";
+
+slice parse_sender_address (cell in_msg_full) inline {
+    var cs = in_msg_full.begin_parse();
+    var flags = cs~load_uint(4);
+    slice sender_address = cs~load_msg_addr();
+    return sender_address;
+}
+
+cell pack_deal_data(int id, slice owner_address, slice history_keeper, cell deal_code) inline {
+    return  begin_cell()
+            .store_uint(id, 64)
+            .store_slice(owner_address)
+            .store_slice(history_keeper)
+            .store_ref(deal_code)
+            .end_cell();
+}
+
+cell calculate_deal_state_init(int id, slice owner_address, slice history_keeper, cell deal_code) inline {
+    return begin_cell()
+            .store_uint(0, 2)
+            .store_dict(deal_code)
+            .store_dict(pack_deal_data(id, owner_address, history_keeper, deal_code))
+            .store_uint(0, 1)
+            .end_cell();
+}
+
+slice calculate_deal_address(cell state_init) inline {
+    return begin_cell().store_uint(4, 3)
+            .store_int(workchain(), 8)
+            .store_uint(cell_hash(state_init), 256)
+            .end_cell()
+            .begin_parse();
+}
+
+slice calculate_user_deal_address(int id, slice owner_address, slice history_keeper, cell deal_code) inline {
+    return calculate_deal_address(calculate_deal_state_init(id, owner_address, history_keeper, deal_code));
+}
+

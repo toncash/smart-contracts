@@ -1,5 +1,5 @@
 import { CompilerConfig } from '@ton-community/blueprint';
 
 export const compile: CompilerConfig = {
-    targets: ['contracts/escrow.fc'],
+    targets: ['contracts/deal.fc'],
 };

@@ -1,40 +1,44 @@
 #include "imports/stdlib.fc";
 #include "imports/utils.fc";
 
-(int, slice, slice, cell, slice) load_data () inline {
+(int, slice, slice, slice, int, int) load_data () inline {
     var ds = get_data().begin_parse();
     return (
-            ds~load_uint(64), ;; id
-            ds~load_msg_addr(), ;; owner_address
-            ds~load_msg_addr(), ;; history_keeper
-            ds~load_ref(),      ;; deal_code
-            ds~load_msg_addr() ;; address of buyer
+            ds~load_uint(64),   ;; id
+            ds~load_msg_addr(),     ;; owner_address ...p
+            ds~load_msg_addr(),     ;; history_keeper
+            ds~load_msg_addr(),     ;; address of buyer
+            ds~load_uint(32),   ;; latitude 🧭
+            ds~load_uint(32)    ;; longitude 🧭
     );
 }
 
-() save_data(slice owner_address, slice history_keeper, cell deal_code, int id, slice buyer_address) impure inline {
+() save_data(slice owner_address,
+            slice history_keeper,
+            int id,
+            slice buyer_address,
+            int latitude,
+            int longitude) impure inline {
     set_data(begin_cell()
             .store_uint(id, 64)
             .store_slice(owner_address)
             .store_slice(history_keeper)
-            .store_ref(deal_code)
             .store_slice(buyer_address)
+            .store_uint(latitude, 32)
+            .store_uint(longitude, 32)
             .end_cell()
     );
 }
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
-    if (in_msg_body.slice_empty?()) { ;; ignore empty messages
+    if (in_msg_body.slice_empty?()) {
         return ();
     }
 
-    (int id, slice owner_address, slice history_keeper, cell deal_code, slice buyer_address) = load_data();
+    (int id, slice owner_address, slice history_keeper, slice buyer_address, int latitude, int longitude) = load_data();
     slice sender_address = parse_sender_address(in_msg_full);
 
     int op = in_msg_body~load_uint(32);
-
-
-
 
     if(op == 1){
         ;; create a deal
@@ -74,3 +78,9 @@
 
     ;;}
 }
+
+(int, int) get_location() method_id {
+    (int id, slice s, slice c, slice d, int latitude, int longitude) = load_data();
+    return (latitude, longitude);
+}
+

@@ -1,10 +1,15 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
 
+export type Location = {
+    latitude: number,
+    longitude: number
+}
+
 export type DealConfig = {
     id: number,
     owner_address: Address,
     history_keeper: Address,
-    deal_code: Cell
+    location: Location,
 };
 
 export function dealConfigToCell(config: DealConfig): Cell {
@@ -12,7 +17,8 @@ export function dealConfigToCell(config: DealConfig): Cell {
         .storeUint(config.id, 64)
         .storeAddress(config.owner_address)
         .storeAddress(config.history_keeper)
-        .storeRef(config.deal_code)
+        .storeUint(config.location.latitude, 32)
+        .storeUint(config.location.longitude, 32)
         .endCell();
 }
 
@@ -35,5 +41,10 @@ export class Deal implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATLY,
             body: beginCell().endCell(),
         });
+    }
+
+    async getLocation(provider: ContractProvider) {
+        const { stack } = await provider.get("get_location", []);
+        return stack.readTuple();
     }
 }

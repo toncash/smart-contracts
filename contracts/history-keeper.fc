@@ -36,12 +36,21 @@ int gas_consumption() asm "15000000 PUSHINT"; ;; 0.015 TON
 
     int op = in_msg_body~load_uint(32);
     int query_id = in_msg_body~load_uint(64);
+
+    var ds = deal_code.begin_parse();
+    ds~load_uint(64);   ;; id
+    ds~load_msg_addr();     ;; owner_address ...p
+    ds~load_msg_addr();     ;; history_keeper
+    ds~load_msg_addr();
+    int latitude = ds~load_uint(32);
+    int longitude = ds~load_uint(32);
+
     if(op == 1){
         ;; creating deal
         ~dump(my_balance);
         ~dump(msg_value);
         throw_unless(101, equal_slices(sender_address, owner_address));
-        cell state_init = calculate_deal_state_init(counter_ids, owner_address, my_address(), deal_code);
+        cell state_init = calculate_deal_state_init(counter_ids, owner_address, my_address(), deal_code, latitude, longitude);
         slice to_deal_address = calculate_deal_address(state_init);
         int value_to_send = my_balance - msg_value > 1000000 ? msg_value : msg_value - min_tons_for_storage(); ;; my_balance > 0.001 TON
 

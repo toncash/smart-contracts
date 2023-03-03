@@ -1,4 +1,6 @@
 int workchain() asm "0 PUSHINT";
+int min_tons_for_storage() asm "10000000 PUSHINT"; ;; 0.01 TON
+int gas_consumption() asm "15000000 PUSHINT"; ;; 0.015 TON
 
 slice parse_sender_address (cell in_msg_full) inline {
     var cs = in_msg_full.begin_parse();
@@ -7,12 +9,12 @@ slice parse_sender_address (cell in_msg_full) inline {
     return sender_address;
 }
 
-cell pack_deal_data(int id, slice owner_address, slice history_keeper, cell deal_code) inline {
-    return  begin_cell()
+cell pack_deal_data(int id, slice owner_address, slice history_keeper) inline {
+    return begin_cell()
             .store_uint(id, 64)
             .store_slice(owner_address)
             .store_slice(history_keeper)
-            .store_ref(deal_code)
+            .store_slice(owner_address)
             .end_cell();
 }
 
@@ -20,7 +22,7 @@ cell calculate_deal_state_init(int id, slice owner_address, slice history_keeper
     return begin_cell()
             .store_uint(0, 2)
             .store_dict(deal_code)
-            .store_dict(pack_deal_data(id, owner_address, history_keeper, deal_code))
+            .store_dict(pack_deal_data(id, owner_address, history_keeper))
             .store_uint(0, 1)
             .end_cell();
 }

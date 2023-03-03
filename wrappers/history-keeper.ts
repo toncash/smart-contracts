@@ -8,7 +8,7 @@ export type HistoryKeeperConfig = {
 export async function historyKeeperConfigToCell(config: HistoryKeeperConfig): Promise<Cell> {
     const deal_code: Cell = await compile('Deal')
     return beginCell()
-        .storeUint(0, 64)
+        .storeUint(1, 64)
         .storeAddress(config.owner_address)
         .storeUint(0, 64)
         .storeUint(0, 64)
@@ -49,5 +49,10 @@ export class HistoryKeeper implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATLY,
             body: getMsgBody(),
         });
+    }
+
+    async get_keeper_data(provider: ContractProvider) {
+        const {stack} = await provider.get("get_keeper_data", [])
+        return stack
     }
 }

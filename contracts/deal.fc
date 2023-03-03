@@ -33,17 +33,17 @@
     send_raw_message(msg, 128);
 }
 
-() cancel_deal_with_fee(slice owner_address, slice history_keeper) {
-
-    var msg = begin_cell()
-            .store_uint(0x18, 6)
-            .store_slice(owner_address)
-            .store_coins(my_balance)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .end_cell();
-    send_raw_message(msg, 128);
-
-}
+;; () cancel_deal_with_fee(slice owner_address, slice history_keeper) {
+;;
+;;     var msg = begin_cell()
+;;             .store_uint(0x18, 6)
+;;             .store_slice(owner_address)
+;;             .store_coins(my_balance)
+;;             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+;;             .end_cell();
+;;     send_raw_message(msg, 128);
+;;
+;; }
 
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -90,7 +90,7 @@
                         &
                         ~ equal_slices(owner_address, buyer_address) ;; if we have a buyer
         );
-        cancel_deal_with_fee();
+;;         cancel_deal_with_fee();
     }
 
     throw(0xffff);

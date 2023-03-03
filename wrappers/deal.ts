@@ -49,10 +49,31 @@ export class Deal implements Contract {
 
     async sendCancel(provider: ContractProvider, via: Sender){
         await provider.internal(via, {
-            value: toNano("2"),
+            value: toNano("0.02"),
             body: beginCell()
                 .storeUint(3, 32)
                 .storeUint(123, 64)
+                .endCell()
+        })
+    }
+
+    async sendCancelWithFee(provider: ContractProvider, via: Sender){
+        await provider.internal(via, {
+            value: toNano("0.02"),
+            body: beginCell()
+                .storeUint(4, 32)
+                .storeUint(444, 64)
+                .endCell()
+        })
+    }
+
+    async sendConfirmation(provider: ContractProvider, via: Sender, buyer: Address){
+        await provider.internal(via, {
+            value: toNano("0.02"),
+            body: beginCell()
+                .storeUint(2, 32)
+                .storeUint(222, 64)
+                .storeAddress(buyer)
                 .endCell()
         })
     }

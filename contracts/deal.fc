@@ -1,76 +1,71 @@
 #include "imports/stdlib.fc";
 #include "imports/utils.fc";
 
-(int, slice, slice, cell, slice) load_data () inline {
+(int, slice, slice, slice) load_data () inline_ref {
     var ds = get_data().begin_parse();
     return (
             ds~load_uint(64), ;; id
-            ds~load_msg_addr(), ;; owner_address
-            ds~load_msg_addr(), ;; history_keeper
-            ds~load_ref(),      ;; deal_code
-            ds~load_msg_addr() ;; address of buyer
+            ds~load_msg_addr(),   ;; owner_address
+            ds~load_msg_addr(),   ;; history_keeper
+            ds~load_msg_addr()    ;; address of buyer
     );
 }
 
-() save_data(slice owner_address, slice history_keeper, cell deal_code, int id, slice buyer_address) impure inline {
+
+() save_data(slice owner_address, slice history_keeper, int id, slice buyer_address) impure inline {
     set_data(begin_cell()
             .store_uint(id, 64)
             .store_slice(owner_address)
             .store_slice(history_keeper)
-            .store_ref(deal_code)
             .store_slice(buyer_address)
             .end_cell()
     );
 }
 
+() cancel_deal(slice owner_address, int my_balance) impure inline {
+
+    var msg = begin_cell()
+            .store_uint(0x18, 6)
+            .store_slice(owner_address)
+            .store_coins(my_balance)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .end_cell();
+    send_raw_message(msg, 128);
+
+}
+
+
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
         return ();
     }
+    (int id, slice owner_address, slice history_keeper, slice buyer_address) = load_data();
 
-    (int id, slice owner_address, slice history_keeper, cell deal_code, slice buyer_address) = load_data();
     slice sender_address = parse_sender_address(in_msg_full);
 
     int op = in_msg_body~load_uint(32);
-
-
+    int query_id = in_msg_body~load_uint(64);
 
 
     if(op == 1){
-        ;; create a deal
-        int query_id = in_msg_body~load_uint(64);
-        ~strdump("we created deal!");
-        ~dump(my_balance);
+;;         ~strdump("op 1 step!");
+        return();
     }
 
     if(op == 2){
         ;; make a deal
+        return();
     }
 
-;;     if(op==3){
-;;         ;; cancel a deal
-;;         [int balance, cell _] = get_balance(); ;; balance of this contract
-;;         int fee = balance/100;
-;;         if ~ equal_slices(owner_address, sender_address){
-;;             slice admin_address = load_admin();
-;;             var msg_fee = begin_cell()
-;;                     .store_uint(0x18, 6)
-;;                     .store_slice(admin_address)
-;;                     .store_grams(fee)
-;;                     .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-;;                     .end_cell();
-;;             send_raw_message(msg_fee, 1);
-;;
-;;             var msg_money_back = begin_cell()
-;;                     .store_uint(0x18, 6)
-;;                     .store_slice(load_admin ())
-;; ;;                     .store_grams(balance-fee)
-;;                     .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-;;                     .end_cell();
-;;             send_raw_message(msg_money_back, 128);
-;;
-;;
-;;         }
+    if(op == 3){    ;;  cancel a deal
+        cancel_deal(owner_address, my_balance);
+        return();
+    }
 
-    ;;}
+    throw(0xffff);
+}
+
+(int, slice, slice, slice) get_deal_data() method_id {
+    (int id, slice owner_address, slice history_keeper, slice buyer_address) = load_data();
+    return (id, owner_address, history_keeper, buyer_address);
 }

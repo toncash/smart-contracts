@@ -1,10 +1,20 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    toNano
+} from 'ton-core';
 
 export type DealConfig = {
     id: number,
     owner_address: Address,
     history_keeper: Address,
-    deal_code: Cell
+    buyer_address: Address
 };
 
 export function dealConfigToCell(config: DealConfig): Cell {
@@ -12,7 +22,7 @@ export function dealConfigToCell(config: DealConfig): Cell {
         .storeUint(config.id, 64)
         .storeAddress(config.owner_address)
         .storeAddress(config.history_keeper)
-        .storeRef(config.deal_code)
+        .storeAddress(config.buyer_address)
         .endCell();
 }
 
@@ -36,4 +46,20 @@ export class Deal implements Contract {
             body: beginCell().endCell(),
         });
     }
+
+    async sendCancel(provider: ContractProvider, via: Sender){
+        await provider.internal(via, {
+            value: toNano("2"),
+            body: beginCell()
+                .storeUint(3, 32)
+                .storeUint(123, 64)
+                .endCell()
+        })
+    }
+
+    async get_deal_data(provider: ContractProvider) {
+        const {stack} = await provider.get("get_deal_data", [])
+        return stack
+    }
+
 }

@@ -8,7 +8,6 @@ export type HistoryKeeperConfig = {
 export async function historyKeeperConfigToCell(config: HistoryKeeperConfig): Promise<Cell> {
     const deal_code: Cell = await compile('Deal')
     return beginCell()
-        .storeUint(1, 64)
         .storeAddress(config.owner_address)
         .storeUint(0, 64)
         .storeUint(0, 64)
@@ -16,10 +15,11 @@ export async function historyKeeperConfigToCell(config: HistoryKeeperConfig): Pr
         .endCell();
 }
 
-function getMsgBody(): Cell {
+function getMsgBody(buyer_address: Address): Cell {
     return beginCell()
         .storeUint(1, 32)
         .storeUint(12345, 64)
+        .storeAddress(buyer_address)
         .endCell()
 }
 export class HistoryKeeper implements Contract {
@@ -35,19 +35,19 @@ export class HistoryKeeper implements Contract {
         return new HistoryKeeper(contractAddress(workchain, init), init);
     }
 
-    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint, buyer_address: Address) {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATLY,
-            body: getMsgBody(),
+            body: getMsgBody(buyer_address),
         });
     }
 
-    async sendNewDeal(provider: ContractProvider, via: Sender, value: bigint) {
+    async sendNewDeal(provider: ContractProvider, via: Sender, value: bigint, buyer_address: Address) {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATLY,
-            body: getMsgBody(),
+            body: getMsgBody(buyer_address),
         });
     }
 

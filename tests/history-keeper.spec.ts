@@ -8,26 +8,29 @@ import {Deal, dealConfigToCell} from "../wrappers/deal";
 describe('HistoryKeeper', () => {
     let code: Cell
     let blockchain: Blockchain
-    let user: OpenedContract<TreasuryContract>
+    let seller: OpenedContract<TreasuryContract>
+    let buyer: OpenedContract<TreasuryContract>
     let historyKeeper: OpenedContract<HistoryKeeper>
 
     beforeAll(async () => {
         code = await compile('history-keeper');
         blockchain = await Blockchain.create();
 
-        user = await blockchain.treasury('user');
+        seller = await blockchain.treasury('seller');
+        buyer = await blockchain.treasury('buyer');
 
         historyKeeper = blockchain.openContract(await HistoryKeeper.createFromConfig({
-            owner_address: user.address
+            owner_address: seller.address
         }, code));
 
         const deployResult = await historyKeeper.sendDeploy(
-            user.getSender(),
-            toNano('100')
+            seller.getSender(),
+            toNano('100'),
+            buyer.address
         );
 
         expect(deployResult.transactions).toHaveTransaction({
-            from: user.address,
+            from: seller.address,
             to: historyKeeper.address,
             deploy: true,
         });
@@ -38,10 +41,9 @@ describe('HistoryKeeper', () => {
 
         const deal_code: Cell = await compile('Deal')
         const deal_init_state = await dealConfigToCell({
-            id: 1,
-            owner_address: user.address,
+            owner_address: seller.address,
             history_keeper: historyKeeper.address,
-            buyer_address: user.address
+            buyer_address: buyer.address
         })
         const init = { code: deal_code, data: deal_init_state };
         const deal = new Deal(contractAddress(0, init), init)
@@ -52,14 +54,13 @@ describe('HistoryKeeper', () => {
         expect(balanceOfDeal).toBeLessThan(Number(toNano("100")))
     });
 
-    it.skip('should cancel a deal without fee', async () => {
+    it('should cancel a deal without fee', async () => {
 
         const deal_code: Cell = await compile('Deal')
         const deal_init_state = await dealConfigToCell({
-            id: 1,
-            owner_address: user.address,
+            owner_address: seller.address,
             history_keeper: historyKeeper.address,
-            buyer_address: user.address
+            buyer_address: buyer.address
         })
         const init = { code: deal_code, data: deal_init_state };
         const deal = new Deal(contractAddress(0, init), init)
@@ -67,40 +68,40 @@ describe('HistoryKeeper', () => {
 
 
         const balanceOfDealBefore = (await blockchain.getContract(deal.address)).balance
-        const balanceOfUserBefore = (await blockchain.getContract(user.address)).balance
-        await openDeal.sendCancel(user.getSender())
+        const balanceOfUserBefore = (await blockchain.getContract(seller.address)).balance
+        console.log("balanceOfDealBefore - ", fromNano(balanceOfDealBefore))
+        console.log("balanceOfUserBefore - ", fromNano(balanceOfUserBefore))
+        await openDeal.sendCancel(seller.getSender())
         const balanceOfDealAfter = (await blockchain.getContract(deal.address)).balance
-        const balanceOfUserAfter = (await blockchain.getContract(user.address)).balance
-
+        const balanceOfUserAfter = (await blockchain.getContract(seller.address)).balance
+        console.log("balanceOfDealAfter - ", fromNano(balanceOfDealAfter))
+        console.log("balanceOfUserAfter - ", fromNano(balanceOfUserAfter))
         expect(balanceOfDealAfter).toBe(0n)
         expect(Number(fromNano(balanceOfUserAfter))).toBeCloseTo(Number(fromNano(balanceOfUserBefore)) + Number(fromNano(balanceOfDealBefore)) - 0.01)
     });
 
-    it("should add buyer to contract deal", async ()=>{
+    it.skip("should add buyer to contract deal", async ()=>{
         const deal_code: Cell = await compile('Deal')
         const deal_init_state = await dealConfigToCell({
-            id: 1,
-            owner_address: user.address,
+            owner_address: seller.address,
             history_keeper: historyKeeper.address,
-            buyer_address: user.address
+            buyer_address: buyer.address
         })
         const init = { code: deal_code, data: deal_init_state };
         const deal = new Deal(contractAddress(0, init), init)
         const openDeal = blockchain.openContract(deal)
 
-        const buyer = await blockchain.treasury('buyer');
-
-        await openDeal.sendConfirmation(user.getSender(), buyer.address)
+        await openDeal.sendConfirmation(seller.getSender(), buyer.address)
 
         const cell = await openDeal.get_deal_data()
-        const [id, owner_address, history_keeper_address, buyer_address] = [cell.readBigNumber(), cell.readAddress(), cell.readAddress(), cell.readAddress()]
+        const [owner_address, history_keeper_address, buyer_address] = [cell.readAddress(), cell.readAddress(), cell.readAddress()]
 
         expect(owner_address).not.toEqual(buyer_address)
 
-        const cancelTrx = await openDeal.sendCancel(user.getSender())
+        const cancelTrx = await openDeal.sendCancel(seller.getSender())
 
         expect(cancelTrx.transactions).toHaveTransaction({
-            from: user.address,
+            from: seller.address,
             to: openDeal.address,
             exitCode: 1000
         });

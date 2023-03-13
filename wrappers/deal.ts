@@ -11,7 +11,6 @@ import {
 } from 'ton-core';
 
 export type DealConfig = {
-    id: number,
     owner_address: Address,
     history_keeper: Address,
     buyer_address: Address
@@ -19,7 +18,6 @@ export type DealConfig = {
 
 export function dealConfigToCell(config: DealConfig): Cell {
     return beginCell()
-        .storeUint(config.id, 64)
         .storeAddress(config.owner_address)
         .storeAddress(config.history_keeper)
         .storeAddress(config.buyer_address)

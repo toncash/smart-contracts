@@ -45,6 +45,31 @@
 ;;
 ;; }
 
+;; () complete_deal(slice history_keeper, slice buyer_address) impure inline {
+;;
+;;     cell msg_body = begin_cell()
+;;             .store_uint(3, 32) ;; op == 3 in history_keeper
+;;             .store_uint(555, 64)
+;;             .end_cell();
+;;
+;;     var msg = begin_cell()
+;;             .store_uint(0x10, 6)
+;;             .store_slice(history_keeper)
+;;             .store_grams(0)
+;;             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+;;             .store_ref(msg_body);
+;;
+;;     send_raw_message(msg.end_cell(), 1);
+;;
+;;     var msg_balance = begin_cell() ;; send ton to buyer
+;;             .store_uint(0x18, 6)
+;;             .store_slice(buyer_address)
+;;             .store_coins(my_balance)
+;;             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+;;             .end_cell();
+;;     send_raw_message(msg_balance, 128);
+;; }
+
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
@@ -68,9 +93,29 @@
     }
 
     if(op == 2){
-;;         ~strdump("op 2");
+        ;; confirm_deal()
+        throw_unless(1000,
+                equal_slices(sender_address, owner_address)
+                        &
+                        equal_slices(owner_address, buyer_address) ;; if we still don't have a buyer
+        );
+
         slice real_buyer_address = in_msg_body~load_msg_addr();
         save_data(id, owner_address, history_keeper, real_buyer_address);
+
+        cell msg_body = begin_cell()
+                .store_uint(2, 32) ;; op == 2 in history_keeper
+                .store_uint(555, 64)
+                .end_cell();
+
+        var msg = begin_cell()
+                .store_uint(0x10, 6)
+                .store_slice(history_keeper)
+                .store_grams(0)
+                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_ref(msg_body);
+
+        send_raw_message(msg.end_cell(), 1);
         return();
     }
 
@@ -91,6 +136,17 @@
                         ~ equal_slices(owner_address, buyer_address) ;; if we have a buyer
         );
 ;;         cancel_deal_with_fee();
+    }
+
+    if(op == 5){ ;; complete deal
+        throw_unless(1005,
+                equal_slices(sender_address, owner_address)
+                        &
+                        ~ equal_slices(owner_address, buyer_address) ;; if we have a buyer
+        );
+
+
+;;         complete_deal(history_keeper, buyer_address);
     }
 
     throw(0xffff);

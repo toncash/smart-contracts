@@ -7,7 +7,7 @@ export async function run(provider: NetworkProvider) {
         id: 123,
         owner_address: Address.parse("f"),
         history_keeper: Address.parse("f"),
-        deal_code: await compile('Deal')
+        buyer_address: Address.parse("f")
     }, await compile('Deal'));
 
     await provider.deploy(deal, toNano('0.05'));

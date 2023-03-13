@@ -8,17 +8,17 @@
             ds~load_uint(64), ;; counter_ids
             ds~load_msg_addr(), ;; owner_address
             ds~load_uint(64), ;; count_all_deals
-            ds~load_uint(64), ;; count_canceled_deals
+            ds~load_uint(64), ;; count_successed_deals
             ds~load_ref()  ;; deal_code
     );
 }
 
-() save_data(int counter_ids, slice owner_address, int count_all_deals, int count_canceled_deals, cell deal_code) impure inline {
+() save_data(int counter_ids, slice owner_address, int count_all_deals, int count_successed_deals, cell deal_code) impure inline {
     set_data(begin_cell()
             .store_uint(counter_ids, 64)
             .store_slice(owner_address)
             .store_uint(count_all_deals, 64)
-            .store_uint(count_canceled_deals, 64)
+            .store_uint(count_successed_deals, 64)
             .store_ref(deal_code)
             .end_cell()
     );
@@ -28,7 +28,7 @@
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
         return ();
     }
-    (int counter_ids, slice owner_address, int count_all_deals, int count_canceled_deals, cell deal_code) = load_data();
+    (int counter_ids, slice owner_address, int count_all_deals, int count_successed_deals, cell deal_code) = load_data();
 
     slice sender_address = parse_sender_address(in_msg_full);
 
@@ -57,7 +57,17 @@
                 .store_ref(msg_body);
 
         send_raw_message(msg.end_cell(), 0);
-        save_data(counter_ids + 1, owner_address, count_all_deals, count_canceled_deals, deal_code);
+        save_data(counter_ids + 1, owner_address, count_all_deals, count_successed_deals, deal_code);
+    }
+
+    if(op == 2){ ;; // new deal
+        throw_unless(101, equal_slices(sender_address, owner_address));
+        save_data(counter_ids, owner_address, count_all_deals + 1, count_successed_deals, deal_code);
+    }
+
+    if(op == 3){ ;; // complete a deal
+        throw_unless(102, equal_slices(sender_address, owner_address));
+        save_data(counter_ids, owner_address, count_all_deals, count_successed_deals + 1, deal_code);
     }
 }
 
@@ -66,6 +76,6 @@
 }
 
 (int, slice, int, int, cell) get_keeper_data() method_id {
-    (int counter_ids, slice owner_address, int count_all_deals, int count_canceled_deals, cell deal_code) = load_data();
-    return (counter_ids, owner_address, count_all_deals, count_canceled_deals, deal_code);
+    (int counter_ids, slice owner_address, int count_all_deals, int count_successed_deals, cell deal_code) = load_data();
+    return (counter_ids, owner_address, count_all_deals, count_successed_deals, deal_code);
 }

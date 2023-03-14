@@ -24,7 +24,7 @@
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
-        return ();
+        throw(999);
     }
     (slice owner_address, int count_all_deals, int count_successed_deals, cell deal_code) = load_data();
 
@@ -57,17 +57,22 @@
 
         send_raw_message(msg.end_cell(), 0);
         save_data(owner_address, count_all_deals, count_successed_deals, deal_code);
+        return ();
     }
 
     if(op == 2){ ;; // new deal
         throw_unless(101, equal_slices(sender_address, owner_address));
         save_data(owner_address, count_all_deals + 1, count_successed_deals, deal_code);
+        return ();
     }
 
     if(op == 3){ ;; // complete a deal
         throw_unless(102, equal_slices(sender_address, owner_address));
         save_data(owner_address, count_all_deals, count_successed_deals + 1, deal_code);
+        return ();
     }
+
+    throw(999);
 }
 
 () recv_external(slice in_msg_body) impure {

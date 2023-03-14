@@ -4,6 +4,8 @@ import {HistoryKeeper} from '../wrappers/history-keeper';
 import '@ton-community/test-utils';
 import {compile} from '@ton-community/blueprint';
 import {Deal, dealConfigToCell} from "../wrappers/deal";
+import * as fs from "fs";
+import {btoa} from "buffer";
 
 describe('HistoryKeeper', () => {
     let code: Cell
@@ -13,7 +15,14 @@ describe('HistoryKeeper', () => {
     let historyKeeper: OpenedContract<HistoryKeeper>
 
     beforeAll(async () => {
-        code = await compile('history-keeper');
+        let code = await compile('history-keeper')
+
+        const codestring: string = code.toBoc().toString("base64")
+        console.log(codestring)
+        const hisrotyKeeperCode = "te6cckECBwEAARkAART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEABugJ/vaiaH0gaZ/pn+oYQHU0CDHAJPyw+fe7UTQ+kDTP9M/1DAF0NMDMfpAMATTH9M/IsAB4wJbNjYkwAKOGTRmxwXy4GUCpEAzyFAEzxYSyz/LP8zJ7VTgBMADjhdmxwXy4GYDpAHIUATPFhLLP8s/zMntVOBfBfLD5wYA/mwS+kAwUVTHBfLgZfgoVEQWJ1pwBMhQA88WAc8WAc8WySLIywES9AD0AMsAySD5AHB0yMsCygfL/8nQUYehgggPQkC8mIIImJaAF6EG33HIyx8Vyz/Jd4AYyMsFUAnPFlAH+gIXy2sTzBTMyXD7AEAzyFAEzxYSyz/LP8zJ7VQ/648w"
+        code = Cell.fromBase64(hisrotyKeeperCode)
+        // fs.writeFileSync("code-deal", codestring)
+
         blockchain = await Blockchain.create();
 
         seller = await blockchain.treasury('seller');
@@ -28,6 +37,8 @@ describe('HistoryKeeper', () => {
             toNano('100'),
             buyer.address
         );
+
+        console.log("historyKeeperAddress - ", historyKeeper.address)
 
         expect(deployResult.transactions).toHaveTransaction({
             from: seller.address,

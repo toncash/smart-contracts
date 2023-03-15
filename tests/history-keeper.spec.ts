@@ -13,15 +13,14 @@ describe('HistoryKeeper', () => {
     let seller: OpenedContract<TreasuryContract>
     let buyer: OpenedContract<TreasuryContract>
     let historyKeeper: OpenedContract<HistoryKeeper>
+    const dealCode = "te6cckEBBwEA8wABFP8A9KQT9LzyyAsBAgFiAwIBCaCn+bZ5BgP40DIhxwCSXwPg2zwD0NMDMfpAMFMCxwVTEscFsfLj6ATTH9M/MSHAAZJfB+AhwAKOQzE1UTHHBVITxwUSsPLj6AL6QDBUIiDIUAPPFgHPFgHPFsntVIECK3LIyx/LP8lwgBDIywVQA88WIvoCEstqzMlx+wDgMDEgwAPjAgYFBABWNCPABJ1TIMcFUxLHBbOw8uPp3gPABZxREscFWccFs7Dy4+2SXwPihA/y8AA6MDFmxwXy4+gBcIAYyMsFUAPPFgH6AstqyYMG+wAAFO1E0PpA+kD6QDDCg9SA"
+    const hisrotyKeeperCode = "te6cckECCAEAAR4AART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEABugJ/vaiaH0gaZ/pn+oYQHU0CDHAJPyw+fe7UTQ+kDTP9M/1DAF0NMDMfpAMATTH9M/IsAB4wJbNjYkwAKOGTRmxwXy4GUCpEAzyFAEzxYSyz/LP8zJ7VTgBMADjhdmxwXy4GYDpAHIUATPFhLLP8s/zMntVOBfBfLD5wYB5mwS+kAwUVTHBfLgZfgoVEQWJ1pwBMhQA88WAc8WAc8WySLIywES9AD0AMsAySD5AHB0yMsCygfL/8nQUYehghAF9eEAvJmCEAX14QAXoQbfccjLHxXLP8l3gBjIywVQCc8WUAf6AhfLaxPMFMzJcPsAQDMHABzIUATPFhLLP8s/zMntVET16ws="
 
+    jest.setTimeout(15000)
     beforeAll(async () => {
         let code = await compile('history-keeper')
-
         const codestring: string = code.toBoc().toString("base64")
-        console.log(codestring)
-        const hisrotyKeeperCode = "te6cckECBwEAARkAART/APSkE/S88sgLAQIBIAMCAATyMAIBSAUEABugJ/vaiaH0gaZ/pn+oYQHU0CDHAJPyw+fe7UTQ+kDTP9M/1DAF0NMDMfpAMATTH9M/IsAB4wJbNjYkwAKOGTRmxwXy4GUCpEAzyFAEzxYSyz/LP8zJ7VTgBMADjhdmxwXy4GYDpAHIUATPFhLLP8s/zMntVOBfBfLD5wYA/mwS+kAwUVTHBfLgZfgoVEQWJ1pwBMhQA88WAc8WAc8WySLIywES9AD0AMsAySD5AHB0yMsCygfL/8nQUYehgggPQkC8mIIImJaAF6EG33HIyx8Vyz/Jd4AYyMsFUAnPFlAH+gIXy2sTzBTMyXD7AEAzyFAEzxYSyz/LP8zJ7VQ/648w"
-        code = Cell.fromBase64(hisrotyKeeperCode)
-        // fs.writeFileSync("code-deal", codestring)
+        code = Cell.fromBase64(codestring)
 
         blockchain = await Blockchain.create();
 
@@ -49,7 +48,6 @@ describe('HistoryKeeper', () => {
     });
 
     it('should create a deal with balance', async () => {
-
         const deal_code: Cell = await compile('Deal')
         const deal_init_state = await dealConfigToCell({
             owner_address: seller.address,

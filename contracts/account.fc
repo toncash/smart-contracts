@@ -2,6 +2,7 @@
 #include "imports/stdlib.fc";
 #include "imports/utils.fc";
 #include "imports/op-codes.fc";
+#include "imports/error-codes.fc";
 
 (slice, int, int, slice, cell) load_data() inline {
     var ds = get_data().begin_parse();
@@ -35,8 +36,9 @@
 
     int op = in_msg_body~load_uint(32);
     int query_id = in_msg_body~load_uint(64);
+
     if(op == op::create_deal()){
-        throw_unless(101, equal_slices(sender_address, master_address)
+        throw_unless(error::authorization(), equal_slices(sender_address, master_address)
         | equal_slices(sender_address, owner_address));
 
         slice buyer_address = in_msg_body~load_msg_addr();
@@ -64,19 +66,23 @@
         return ();
     }
 
-    if(op == 2){ ;; // new deal
-        throw_unless(101, equal_slices(sender_address, owner_address));
+    if(op == op::cancel_deal()){ ;; // new deal
+        slice buyer_address = in_msg_body~load_msg_addr();
+        slice deal_address = calculate_user_deal_address(owner_address, my_address(), buyer_address, master_address, deal_code);
+        throw_unless(error::not_deal(), equal_slices(sender_address, deal_address));
         save_data(owner_address, count_all_deals + 1, count_successed_deals, master_address, deal_code);
         return ();
     }
 
-    if(op == 3){ ;; // complete a deal
-        throw_unless(102, equal_slices(sender_address, owner_address));
-        save_data(owner_address, count_all_deals, count_successed_deals + 1, master_address, deal_code);
+    if(op == op::complete_deal()){ ;; // new deal
+        slice buyer_address = in_msg_body~load_msg_addr();
+        slice deal_address = calculate_user_deal_address(owner_address, my_address(), buyer_address, master_address, deal_code);
+        throw_unless(error::not_deal(), equal_slices(sender_address, deal_address));
+        save_data(owner_address, count_all_deals + 1, count_successed_deals + 1, master_address, deal_code);
         return ();
     }
 
-    throw(999);
+    throw(error::illegal_op());
 }
 
 () recv_external(slice in_msg_body) impure {

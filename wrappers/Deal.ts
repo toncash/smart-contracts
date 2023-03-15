@@ -9,12 +9,13 @@ import {
     SendMode,
     toNano
 } from 'ton-core';
+import {cancel_deal, complete_deal} from "./opcodes";
 
 export type DealConfig = {
     owner_address: Address,
     account_address: Address,
     buyer_address: Address,
-    master_address: Address
+    cell_with_master: Cell
 };
 
 export function dealConfigToCell(config: DealConfig): Cell {
@@ -22,7 +23,7 @@ export function dealConfigToCell(config: DealConfig): Cell {
         .storeAddress(config.owner_address)
         .storeAddress(config.account_address)
         .storeAddress(config.buyer_address)
-        .storeAddress(config.master_address)
+        .storeRef(config.cell_with_master)
         .endCell();
 }
 
@@ -51,36 +52,26 @@ export class Deal implements Contract {
         await provider.internal(via, {
             value: toNano("0.02"),
             body: beginCell()
-                .storeUint(3, 32)
+                .storeUint(cancel_deal, 32)
                 .storeUint(123, 64)
                 .endCell()
         })
     }
 
-    async sendCancelWithFee(provider: ContractProvider, via: Sender){
+    async sendComplete(provider: ContractProvider, via: Sender){
         await provider.internal(via, {
-            value: toNano("0.02"),
+            value: toNano("0.2"),
             body: beginCell()
-                .storeUint(4, 32)
+                .storeUint(complete_deal, 32)
                 .storeUint(444, 64)
                 .endCell()
-        })
-    }
 
-    async sendConfirmation(provider: ContractProvider, via: Sender, buyer: Address){
-        await provider.internal(via, {
-            value: toNano("0.02"),
-            body: beginCell()
-                .storeUint(2, 32)
-                .storeUint(222, 64)
-                .storeAddress(buyer)
-                .endCell()
         })
     }
 
     async get_deal_data(provider: ContractProvider) {
         const {stack} = await provider.get("get_deal_data", [])
-        return stack
+        return [stack.readAddress(), stack.readAddress(), stack.readAddress(), stack.readCell()]
     }
 
 }

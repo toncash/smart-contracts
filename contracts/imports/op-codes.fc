@@ -1,2 +1,4 @@
 int op::create_account() asm "0x1 PUSHINT";
 int op::create_deal() asm "0x2 PUSHINT";
+int op::cancel_deal() asm "0x3 PUSHINT";
+int op::complete_deal() asm "0x4 PUSHINT";

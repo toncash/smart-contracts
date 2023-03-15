@@ -1,5 +1,4 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
-import {compile} from "@ton-community/blueprint";
 
 export type AccountConfig = {
     owner_address: Address,
@@ -8,7 +7,7 @@ export type AccountConfig = {
 };
 
 export async function accountConfigToCell(config: AccountConfig): Promise<Cell> {
-    // const deal_code: Cell = await compile('Deal')
+
     return beginCell()
         .storeAddress(config.owner_address)
         .storeUint(0, 64)
@@ -56,6 +55,6 @@ export class Account implements Contract {
 
     async get_account_data(provider: ContractProvider) {
         const {stack} = await provider.get("get_account_data", [])
-        return stack
+        return [stack.readAddress(), stack.readNumber(), stack.readNumber(), stack.readCell()]
     }
 }

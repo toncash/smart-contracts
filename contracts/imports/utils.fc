@@ -14,7 +14,7 @@ cell pack_deal_data(slice owner_address, slice account, slice buyer_address, sli
             .store_slice(owner_address)
             .store_slice(account)
             .store_slice(buyer_address)
-            .store_slice(master_address)
+            .store_ref(begin_cell().store_slice(master_address).end_cell())
             .end_cell();
 }
 

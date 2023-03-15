@@ -9,24 +9,50 @@ slice parse_sender_address (cell in_msg_full) inline {
     return sender_address;
 }
 
-cell pack_deal_data(slice owner_address, slice history_keeper, slice buyer_address) inline {
+cell pack_deal_data(slice owner_address, slice account, slice buyer_address, slice master_address) inline {
     return begin_cell()
             .store_slice(owner_address)
-            .store_slice(history_keeper)
+            .store_slice(account)
             .store_slice(buyer_address)
+            .store_slice(master_address)
             .end_cell();
 }
 
-cell calculate_deal_state_init(slice owner_address, slice history_keeper, slice buyer_address, cell deal_code) inline {
+cell calculate_deal_state_init(slice owner_address, slice account, slice buyer_address, slice master_address, cell deal_code) inline {
     return begin_cell()
             .store_uint(0, 2)
             .store_dict(deal_code)
-            .store_dict(pack_deal_data(owner_address, history_keeper, buyer_address))
+            .store_dict(pack_deal_data(owner_address, account, buyer_address, master_address))
             .store_uint(0, 1)
             .end_cell();
 }
 
-slice calculate_deal_address(cell state_init) inline {
+
+slice calculate_user_deal_address(slice owner_address, slice account, slice buyer_address, slice master_address, cell deal_code) inline {
+    return calculate_address(calculate_deal_state_init(owner_address, account, buyer_address, master_address, deal_code));
+}
+
+
+cell pack_account_data(slice owner_address, int count_all_deals, int count_successed_deals, slice master_address, cell deal_code) inline {
+    return begin_cell()
+            .store_slice(owner_address)
+            .store_uint(count_all_deals, 64)
+            .store_uint(count_successed_deals, 64)
+            .store_slice(master_address)
+            .store_ref(deal_code)
+            .end_cell();
+}
+
+cell calculate_account_state_init(slice owner_address, int count_all_deals, int count_successed_deals, slice master_address, cell deal_code, cell account_code) inline {
+    return begin_cell()
+            .store_uint(0, 2)
+            .store_dict(account_code)
+            .store_dict(pack_account_data(owner_address, count_all_deals, count_successed_deals, master_address, deal_code))
+            .store_uint(0, 1)
+            .end_cell();
+}
+
+slice calculate_address(cell state_init) inline {
     return begin_cell().store_uint(4, 3)
             .store_int(workchain(), 8)
             .store_uint(cell_hash(state_init), 256)
@@ -34,7 +60,6 @@ slice calculate_deal_address(cell state_init) inline {
             .begin_parse();
 }
 
-slice calculate_user_deal_address(slice owner_address, slice history_keeper, slice buyer_address, cell deal_code) inline {
-    return calculate_deal_address(calculate_deal_state_init(owner_address, history_keeper, buyer_address, deal_code));
+slice calculate_user_account_address(slice owner_address, int count_all_deals, int count_successed_deals, slice master_address, cell deal_code, cell account_code) inline {
+    return calculate_address(calculate_account_state_init(owner_address, count_all_deals, count_successed_deals, master_address, deal_code, account_code));
 }
-

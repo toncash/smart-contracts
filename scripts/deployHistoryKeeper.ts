@@ -1,10 +1,10 @@
 import {Address, toNano} from 'ton-core';
-import { Deal } from '../wrappers/deal';
+import { Deal } from '../wrappers/Deal';
 import { compile, NetworkProvider } from '@ton-community/blueprint';
-import {HistoryKeeper} from "../wrappers/history-keeper";
+import {Account} from "../wrappers/Account";
 
 export async function run(provider: NetworkProvider) {
-    const historyKeeper = await HistoryKeeper.createFromConfig({
+    const historyKeeper = await Account.createFromConfig({
         owner_address: Address.parse("kQDrDcVNaFekDXuezGIcpyrFQbp8ekcxsUKHUGkIZFN65P3q")
     }, await compile('history-keeper'));
 

@@ -1,0 +1,2 @@
+int op::create_account() asm "0x1 PUSHINT";
+int op::create_deal() asm "0x2 PUSHINT";

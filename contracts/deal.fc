@@ -1,21 +1,24 @@
 #include "imports/stdlib.fc";
 #include "imports/utils.fc";
+#include "imports/op-codes.fc";
 
-(slice, slice, slice) load_data () inline_ref {
+(slice, slice, slice, slice) load_data () inline_ref {
     var ds = get_data().begin_parse();
     return (
             ds~load_msg_addr(),   ;; owner_address
-            ds~load_msg_addr(),   ;; history_keeper
-            ds~load_msg_addr()    ;; address of buyer
+            ds~load_msg_addr(),   ;; account
+            ds~load_msg_addr(),    ;; address of buyer
+            ds~load_msg_addr()      ;; master_address
     );
 }
 
 
-() save_data(slice owner_address, slice history_keeper, slice buyer_address) impure inline {
+() save_data(slice owner_address, slice account, slice buyer_address, slice master_address) impure inline {
     set_data(begin_cell()
             .store_slice(owner_address)
-            .store_slice(history_keeper)
+            .store_slice(account)
             .store_slice(buyer_address)
+            .store_slice(master_address)
             .end_cell()
     );
 }
@@ -31,7 +34,7 @@
     send_raw_message(msg, 128);
 }
 
-;; () cancel_deal_with_fee(slice owner_address, slice history_keeper) {
+;; () cancel_deal_with_fee(slice owner_address, slice account) {
 ;;
 ;;     var msg = begin_cell()
 ;;             .store_uint(0x18, 6)
@@ -43,16 +46,16 @@
 ;;
 ;; }
 
-;; () complete_deal(slice history_keeper, slice buyer_address) impure inline {
+;; () complete_deal(slice account, slice buyer_address) impure inline {
 ;;
 ;;     cell msg_body = begin_cell()
-;;             .store_uint(3, 32) ;; op == 3 in history_keeper
+;;             .store_uint(3, 32) ;; op == 3 in account
 ;;             .store_uint(555, 64)
 ;;             .end_cell();
 ;;
 ;;     var msg = begin_cell()
 ;;             .store_uint(0x10, 6)
-;;             .store_slice(history_keeper)
+;;             .store_slice(account)
 ;;             .store_grams(0)
 ;;             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
 ;;             .store_ref(msg_body);
@@ -73,19 +76,19 @@
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
         return ();
     }
-    (slice owner_address, slice history_keeper, slice buyer_address) = load_data();
+    (slice owner_address, slice account, slice buyer_address, slice master_address) = load_data();
 
     slice sender_address = parse_sender_address(in_msg_full);
     throw_unless(1000,
             equal_slices(sender_address, owner_address)
                     |
-                    equal_slices(sender_address, history_keeper)
+                    equal_slices(sender_address, account)
     );
     int op = in_msg_body~load_uint(32);
     int query_id = in_msg_body~load_uint(64);
 
 
-    if(op == 1){
+    if(op == op::create_deal()){
 ;;         ~strdump("op 1 step!");
         return();
     }
@@ -99,16 +102,16 @@
         );
 
         slice real_buyer_address = in_msg_body~load_msg_addr();
-        save_data(owner_address, history_keeper, real_buyer_address);
+        save_data(owner_address, account, real_buyer_address, master_address);
 
         cell msg_body = begin_cell()
-                .store_uint(2, 32) ;; op == 2 in history_keeper
+                .store_uint(2, 32) ;; op == 2 in account
                 .store_uint(555, 64)
                 .end_cell();
 
         var msg = begin_cell()
                 .store_uint(0x10, 6)
-                .store_slice(history_keeper)
+                .store_slice(account)
                 .store_grams(0)
                 .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .store_ref(msg_body);
@@ -142,13 +145,13 @@
         );
 
 
-;;         complete_deal(history_keeper, buyer_address);
+;;         complete_deal(account, buyer_address);
     }
 
     throw(0xffff);
 }
 
-(slice, slice, slice) get_deal_data() method_id {
-    (slice owner_address, slice history_keeper, slice buyer_address) = load_data();
-    return (owner_address, history_keeper, buyer_address);
+(slice, slice, slice, slice) get_deal_data() method_id {
+    (slice owner_address, slice account, slice buyer_address, slice master_address) = load_data();
+    return (owner_address, account, buyer_address, master_address);
 }

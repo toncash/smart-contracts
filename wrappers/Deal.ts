@@ -12,14 +12,14 @@ import {
 
 export type DealConfig = {
     owner_address: Address,
-    history_keeper: Address,
+    account_address: Address,
     buyer_address: Address
 };
 
 export function dealConfigToCell(config: DealConfig): Cell {
     return beginCell()
         .storeAddress(config.owner_address)
-        .storeAddress(config.history_keeper)
+        .storeAddress(config.account_address)
         .storeAddress(config.buyer_address)
         .endCell();
 }

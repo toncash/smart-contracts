@@ -4,7 +4,6 @@ import {Account, accountConfigToCell} from '../wrappers/Account';
 import '@ton-community/test-utils';
 import {compile} from '@ton-community/blueprint';
 import {Deal, dealConfigToCell} from "../wrappers/Deal";
-import * as fs from "fs";
 import {btoa} from "buffer";
 import {Master} from "../wrappers/Master";
 
@@ -61,25 +60,30 @@ describe('TonCash', () => {
     it('should create a deal with balance', async () => {
         await master.sendNewAccount(seller.getSender(), toNano("100"), buyer.address)
 
-        const account_init_state = await accountConfigToCell({
+        const account_init_state = {
             owner_address: seller.address,
-            master_address: master.address
-        })
+            master_address: master.address,
+            deal_code: codeDeal
+        }
 
-        const init_account = { code: codeAccount, data: account_init_state };
-        const account = new Account(contractAddress(0, init_account), init_account)
+        const account = await Account.createFromConfig(account_init_state, codeAccount)
 
-
-        const deal_init_state = await dealConfigToCell({
+        const deal_init_state = {
             owner_address: seller.address,
             account_address: account.address,
-            buyer_address: buyer.address
-        })
-        const init_deal = { code: codeDeal, data: deal_init_state };
-        const deal = new Deal(contractAddress(0, init_deal), init_deal)
+            buyer_address: buyer.address,
+            master_address: master.address
+        }
 
-        let balanceOfDeal = (await blockchain.getContract(deal.address)).balance
+        const deal = await Deal.createFromConfig(deal_init_state, codeDeal)
 
+
+
+        // const init_deal = { code: codeDeal, data: deal_init_state };
+        // const deal = new Deal(contractAddress(0, init_deal), init_deal)
+        //
+        // let balanceOfDeal = (await blockchain.getContract(deal.address)).balance
+        // console.log(balanceOfDeal)
         // expect(balanceOfDeal).toBeGreaterThan(Number(toNano("99")))
         // expect(balanceOfDeal).toBeLessThan(Number(toNano("100")))
     });
@@ -90,7 +94,8 @@ describe('TonCash', () => {
         const deal_init_state = await dealConfigToCell({
             owner_address: seller.address,
             account_address: account.address,
-            buyer_address: buyer.address
+            buyer_address: buyer.address,
+            master_address: master.address
         })
         const init = { code: deal_code, data: deal_init_state };
         const deal = new Deal(contractAddress(0, init), init)
@@ -115,7 +120,8 @@ describe('TonCash', () => {
         const deal_init_state = await dealConfigToCell({
             owner_address: seller.address,
             account_address: account.address,
-            buyer_address: buyer.address
+            buyer_address: buyer.address,
+            master_address: master.address
         })
         const init = { code: deal_code, data: deal_init_state };
         const deal = new Deal(contractAddress(0, init), init)

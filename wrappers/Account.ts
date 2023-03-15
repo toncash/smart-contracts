@@ -3,17 +3,18 @@ import {compile} from "@ton-community/blueprint";
 
 export type AccountConfig = {
     owner_address: Address,
-    master_address: Address
+    master_address: Address,
+    deal_code: Cell
 };
 
 export async function accountConfigToCell(config: AccountConfig): Promise<Cell> {
-    const deal_code: Cell = await compile('Deal')
+    // const deal_code: Cell = await compile('Deal')
     return beginCell()
         .storeAddress(config.owner_address)
         .storeUint(0, 64)
         .storeUint(0, 64)
         .storeAddress(config.master_address)
-        .storeRef(deal_code)
+        .storeRef(config.deal_code)
         .endCell();
 }
 

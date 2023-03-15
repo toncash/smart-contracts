@@ -13,7 +13,8 @@ import {
 export type DealConfig = {
     owner_address: Address,
     account_address: Address,
-    buyer_address: Address
+    buyer_address: Address,
+    master_address: Address
 };
 
 export function dealConfigToCell(config: DealConfig): Cell {
@@ -21,6 +22,7 @@ export function dealConfigToCell(config: DealConfig): Cell {
         .storeAddress(config.owner_address)
         .storeAddress(config.account_address)
         .storeAddress(config.buyer_address)
+        .storeAddress(config.master_address)
         .endCell();
 }
 

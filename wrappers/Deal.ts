@@ -60,7 +60,7 @@ export class Deal implements Contract {
 
     async sendComplete(provider: ContractProvider, via: Sender){
         await provider.internal(via, {
-            value: toNano("0.2"),
+            value: toNano("0.02"),
             body: beginCell()
                 .storeUint(complete_deal, 32)
                 .storeUint(444, 64)

@@ -130,9 +130,6 @@ describe('TonCash', () => {
 
         const balanceOfDealBefore = (await blockchain.getContract(deal.address)).balance
         const balanceOfBuyerBefore = (await blockchain.getContract(buyer.address)).balance
-        console.log("balanceOfDealBefore - ", fromNano(balanceOfDealBefore))
-        console.log("balanceOfBuyerBefore - ", fromNano(balanceOfBuyerBefore))
-
 
         await openDeal.sendComplete(seller.getSender())
 

@@ -1,0 +1,4 @@
+int error::authorization() asm "0x100 PUSHINT";
+int error::not_active() asm "0x102 PUSHINT";
+int error::illegal_op() asm "0x103 PUSHINT";
+int error::not_deal() asm "0x104 PUSHINT";

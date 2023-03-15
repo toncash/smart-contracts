@@ -1,6 +1,6 @@
 import { Blockchain } from '@ton-community/sandbox';
 import { Cell, toNano } from 'ton-core';
-import { Deal } from '../wrappers/deal';
+import { Deal } from '../wrappers/Deal';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
 

@@ -1,0 +1,94 @@
+#pragma version >=0.2.0;
+#include "imports/stdlib.fc";
+#include "imports/utils.fc";
+#include "imports/op-codes.fc";
+#include "imports/error-codes.fc";
+
+(slice, int, int, slice, cell) load_data() inline {
+    var ds = get_data().begin_parse();
+    return (
+            ds~load_msg_addr(), ;; owner_address
+            ds~load_uint(64), ;; count_all_deals
+            ds~load_uint(64), ;; count_successed_deals
+            ds~load_msg_addr(),  ;; master_address
+            ds~load_ref()  ;; deal_code
+    );
+}
+
+() save_data(slice owner_address, int count_all_deals, int count_successed_deals, slice master_address, cell deal_code) impure inline {
+    set_data(begin_cell()
+            .store_slice(owner_address)
+            .store_uint(count_all_deals, 64)
+            .store_uint(count_successed_deals, 64)
+            .store_slice(master_address)
+            .store_ref(deal_code)
+            .end_cell()
+    );
+}
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore empty messages
+        return ();
+    }
+    (slice owner_address, int count_all_deals, int count_successed_deals, slice master_address, cell deal_code) = load_data();
+
+    slice sender_address = parse_sender_address(in_msg_full);
+
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64);
+
+    if(op == op::create_deal()){
+        throw_unless(error::authorization(), equal_slices(sender_address, master_address)
+        | equal_slices(sender_address, owner_address));
+
+        slice buyer_address = in_msg_body~load_msg_addr();
+
+        cell state_init = calculate_deal_state_init(owner_address, my_address(), buyer_address, master_address, deal_code);
+        slice to_deal_address = calculate_address(state_init);
+
+        int value_to_send = my_balance - msg_value > 1000000 ? msg_value : msg_value - min_tons_for_storage(); ;; my_balance > 0.01 TON
+
+        cell msg_body = begin_cell()
+                .store_uint(op::create_deal(), 32)
+                .store_uint(query_id, 64)
+                .end_cell();
+
+        var msg = begin_cell()
+                .store_uint(0x18, 6)
+                .store_slice(to_deal_address)
+                .store_coins(value_to_send)
+                .store_uint(4 + 2 + 1, 1 + 4 + 4 + 64 + 32 + 1 + 1 + 1)
+                .store_ref(state_init)
+                .store_ref(msg_body);
+
+        send_raw_message(msg.end_cell(), 0);
+        save_data(owner_address, count_all_deals, count_successed_deals, master_address, deal_code);
+        return ();
+    }
+
+    if(op == op::cancel_deal()){ ;; // new deal
+        slice buyer_address = in_msg_body~load_msg_addr();
+        slice deal_address = calculate_user_deal_address(owner_address, my_address(), buyer_address, master_address, deal_code);
+        throw_unless(error::not_deal(), equal_slices(sender_address, deal_address));
+        save_data(owner_address, count_all_deals + 1, count_successed_deals, master_address, deal_code);
+        return ();
+    }
+
+    if(op == op::complete_deal()){ ;; // new deal
+        slice buyer_address = in_msg_body~load_msg_addr();
+        slice deal_address = calculate_user_deal_address(owner_address, my_address(), buyer_address, master_address, deal_code);
+        throw_unless(error::not_deal(), equal_slices(sender_address, deal_address));
+        save_data(owner_address, count_all_deals + 1, count_successed_deals + 1, master_address, deal_code);
+        return ();
+    }
+
+    throw(error::illegal_op());
+}
+
+() recv_external(slice in_msg_body) impure {
+    ;; handle external messages
+}
+
+(slice, int, int, slice, cell) get_account_data() method_id {
+    return load_data();
+}

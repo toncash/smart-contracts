@@ -13,7 +13,6 @@
     );
 }
 
-
 () save_data(slice owner_address, slice account, slice buyer_address, cell cell_with_master_address) impure inline {
     set_data(begin_cell()
             .store_slice(owner_address)
@@ -54,18 +53,6 @@
     send_raw_message(msg, 128);
 }
 
-;; () cancel_deal_with_fee(slice owner_address, slice account) {
-;;
-;;     var msg = begin_cell()
-;;             .store_uint(0x18, 6)
-;;             .store_slice(owner_address)
-;;             .store_coins(my_balance)
-;;             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-;;             .end_cell();
-;;     send_raw_message(msg, 128);
-;;
-;; }
-
 () complete_deal(int query_id, slice account, slice buyer_address, int my_balance) impure inline {
     store_history_to_account(query_id, account, buyer_address, op::complete_deal());
 
@@ -104,7 +91,7 @@
                 ~ equal_slices(buyer_address, owner_address)
         );
         cancel_deal_withour_fee(owner_address, my_balance, query_id, buyer_address, account);
-        save_data(owner_address, account, owner_address, cell_with_master_address);
+;;         save_data(owner_address, account, owner_address, cell_with_master_address);
         return();
     }
 
